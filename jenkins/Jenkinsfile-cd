@@ -1,26 +1,13 @@
-// CD job (Wanderlust-CD): updates the image tags in the Kubernetes manifests and pushes the change to GitHub.
-// Triggered automatically by the CI job after a successful image push.
-// NOTE: replace YOUR_EMAIL@example.com before using.
 @Library('Shared') _
 pipeline {
     agent any
-
+    
     parameters {
         string(name: 'FRONTEND_DOCKER_TAG', defaultValue: '', description: 'Frontend Docker tag of the image built by the CI job')
         string(name: 'BACKEND_DOCKER_TAG', defaultValue: '', description: 'Backend Docker tag of the image built by the CI job')
     }
 
     stages {
-        stage("Validate Parameters") {
-            steps {
-                script {
-                    if (params.FRONTEND_DOCKER_TAG == '' || params.BACKEND_DOCKER_TAG == '') {
-                        error("FRONTEND_DOCKER_TAG and BACKEND_DOCKER_TAG must be provided.")
-                    }
-                }
-            }
-        }
-
         stage("Workspace cleanup"){
             steps{
                 script{
@@ -28,7 +15,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Git: Code Checkout') {
             steps {
                 script{
@@ -36,7 +23,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Verify: Docker Image Tags') {
             steps {
                 script{
@@ -45,76 +32,93 @@ pipeline {
                 }
             }
         }
-
+        
+        
         stage("Update: Kubernetes manifests"){
             steps{
                 script{
                     dir('kubernetes'){
-                        // Replace the whole image line so the Docker Hub namespace is correct, not just the tag
                         sh """
-                            sed -i "s|image: .*wanderlust-backend-beta.*|image: arslannagori/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG}|" backend.yaml
-                            sed -i "s|image: .*wanderlust-frontend-beta.*|image: arslannagori/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG}|" frontend.yaml
+                            sed -i -e s/wanderlust-backend-beta.*/wanderlust-backend-beta:${params.BACKEND_DOCKER_TAG}/g backend.yaml
                         """
                     }
+                    
+                    dir('kubernetes'){
+                        sh """
+                            sed -i -e s/wanderlust-frontend-beta.*/wanderlust-frontend-beta:${params.FRONTEND_DOCKER_TAG}/g frontend.yaml
+                        """
+                    }
+                    
                 }
             }
         }
-
+        
         stage("Git: Code update and push to GitHub"){
             steps{
                 script{
                     withCredentials([gitUsernamePassword(credentialsId: 'GitHub-Credential', gitToolName: 'Default')]) {
-                        sh """
-                            git status
-                            git add kubernetes/
-                            if git diff --cached --quiet; then
-                                echo "No manifest changes to commit"
-                            else
-                                git commit -m "Update image tags: backend ${params.BACKEND_DOCKER_TAG}, frontend ${params.FRONTEND_DOCKER_TAG}"
-                                git push https://github.com/ArslanNagori/Wanderlust.git main
-                            fi
-                        """
+                        sh '''
+                        echo "Checking repository status: "
+                        git status
+                    
+                        echo "Adding changes to git: "
+                        git add .
+                        
+                        echo "Commiting changes: "
+                        git commit -m "Updated environment variables"
+                        
+                        echo "Pushing changes to github: "
+                        git push https://github.com/ArslanNagori/Wanderlust.git main
+                    '''
                     }
                 }
             }
         }
     }
-
-    post {
+  post {
         success {
             script {
                 emailext attachLog: true,
-                from: 'YOUR_EMAIL@example.com',
-                subject: "Wanderlust CD: manifests updated - '${currentBuild.result}'",
+                from: 'arslan11mathsncs@gmail.com',
+                subject: "Wanderlust Application has been updated and deployed - '${currentBuild.result}'",
                 body: """
                     <html>
                     <body>
-                        <p><b>Project:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
-                        <p><b>URL:</b> ${env.BUILD_URL}</p>
+                        <div style="background-color: #FFA07A; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Project: ${env.JOB_NAME}</p>
+                        </div>
+                        <div style="background-color: #90EE90; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Build Number: ${env.BUILD_NUMBER}</p>
+                        </div>
+                        <div style="background-color: #87CEEB; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">URL: ${env.BUILD_URL}</p>
+                        </div>
                     </body>
                     </html>
-                """,
-                to: 'YOUR_EMAIL@example.com',
-                mimeType: 'text/html'
+            """,
+            to: 'arslan11mathsncs@gmail.com',
+            mimeType: 'text/html'
             }
         }
-        failure {
+      failure {
             script {
                 emailext attachLog: true,
-                from: 'YOUR_EMAIL@example.com',
-                subject: "Wanderlust CD build failed - '${currentBuild.result}'",
+                from: 'arslan11mathsncs@gmail.com',
+                subject: "Wanderlust Application build failed - '${currentBuild.result}'",
                 body: """
                     <html>
                     <body>
-                        <p><b>Project:</b> ${env.JOB_NAME}</p>
-                        <p><b>Build Number:</b> ${env.BUILD_NUMBER}</p>
-                        <p><b>URL:</b> ${env.BUILD_URL}</p>
+                        <div style="background-color: #FFA07A; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Project: ${env.JOB_NAME}</p>
+                        </div>
+                        <div style="background-color: #90EE90; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: black; font-weight: bold;">Build Number: ${env.BUILD_NUMBER}</p>
+                        </div>
                     </body>
                     </html>
-                """,
-                to: 'YOUR_EMAIL@example.com',
-                mimeType: 'text/html'
+            """,
+            to: 'arslan11mathsncs@gmail.com',
+            mimeType: 'text/html'
             }
         }
     }
