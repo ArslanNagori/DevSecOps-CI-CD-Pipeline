@@ -58,7 +58,17 @@ Docker Hub repositories showing the Wanderlust backend and frontend images pushe
 
 ### 07 — CD Job and Manifest Commit
 
-![CD Job and Manifest Commit](./07-cd-job-and-manifest-commit.png)
+#### CD Job Result
+
+![CD Job Result](./07a-cd-commit-header.png)
+
+Shows the CD pipeline commit created by Jenkins after updating the Kubernetes manifests.
+
+#### Kubernetes Manifest Changes
+
+![Manifest Changes](./07b-cd-commit-diff.png)
+
+Shows the changes made to `backend.yaml` and `frontend.yaml`, including the updated Docker image tags.
 
 Evidence of the CD/GitOps workflow:
 
