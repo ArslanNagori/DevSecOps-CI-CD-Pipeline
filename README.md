@@ -2,7 +2,7 @@
 
 A Jenkins pipeline on AWS EC2 that checks out a MERN application, runs security scans (Trivy, OWASP Dependency-Check, SonarQube), builds and pushes Docker images, and then updates the Kubernetes manifests through a separate CD job.
 
-> **Demo:** [add your 60-90 second screen recording link here]
+> > **Demo:** [Watch the DevSecOps Pipeline Demo](./video/devsecops-pipeline-demo.mp4)
 
 ## What it does
 
